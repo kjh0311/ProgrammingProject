@@ -16,6 +16,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -26,6 +27,8 @@ import com.kjh.blescanner.domain.BluetoothDeviceData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // 블루투스 권한 요청 거부 시 처리 방법
 
@@ -64,13 +67,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void processResult(final ScanResult result) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    if (deviceViewAdapter.addDevice(result.getDevice())) {
-                        deviceViewAdapter.notifyDataSetChanged();
-                        Log.d("processResult", result+"");
-                    }
+            runOnUiThread(() -> {
+                boolean added = deviceViewAdapter.addDevice(result.getDevice());
+                if (added) {
+                    Log.d("processResult", result+"");
+                    deviceViewAdapter.notifyDataSetChanged();
                 }
             });
         }
@@ -80,6 +81,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        PackageManager packageManager = getPackageManager();
+
+        // finish app if the BLE is not supported
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            finish();
+        }
 
         resultLauncher = registerForActivityResult(
         new ActivityResultContracts.StartActivityForResult(),
@@ -122,26 +130,22 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this)) ;
 
         // 리사이클러뷰에 SimpleTextAdapter 객체 지정.
-        deviceViewAdapter = new BluetoothDeviceViewAdapter() ;
+        deviceViewAdapter = new BluetoothDeviceViewAdapter(this) ;
         recyclerView.setAdapter(deviceViewAdapter);
 
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS);
         // 여기서 블루투스 어댑터를 다시 얻어와야 사용 가능
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-//        bluetoothAdapter.startLeScan(leScanCallback);
-        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+        bluetoothAdapter.startDiscovery();
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
 
+//        startScan();
+        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+
         btnScan = findViewById(R.id.btnScan);
         btnScan.setOnClickListener(listener -> {
-
-            Log.d(TAG, "btnScan 클릭");
-
+            //startScan();
             bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
             bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
         });
@@ -163,8 +167,8 @@ public class MainActivity extends AppCompatActivity {
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
 
-//                Log.d("deviceName", deviceName);
-//                Log.d("deviceHardwareAddress", deviceHardwareAddress);
+                Log.d("deviceName", deviceName);
+                Log.d("deviceHardwareAddress", deviceHardwareAddress);
                 deviceViewAdapter.addDevice(device);
                 deviceViewAdapter.notifyDataSetChanged();
             }
@@ -177,5 +181,26 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Don't forget to unregister the ACTION_FOUND receiver.
         unregisterReceiver(receiver);
+    }
+
+
+    private void startScan() {
+//        bluetoothAdapter.startLeScan(leScanCallback);
+        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+        if (btnScan != null)
+            btnScan.setEnabled(false);
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(() -> {
+                    stopScan();
+                });
+            }
+        }, 3000);
+    }
+
+    private void stopScan() {
+        bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
+        btnScan.setEnabled(true);
     }
 }

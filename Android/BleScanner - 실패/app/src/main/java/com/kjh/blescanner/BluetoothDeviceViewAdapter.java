@@ -1,6 +1,7 @@
 package com.kjh.blescanner;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
 import android.content.Context;
 import android.os.ParcelUuid;
 import android.util.Log;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -17,13 +19,19 @@ import java.util.ArrayList;
 
 public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDeviceViewAdapter.ViewHolder> {
 
+    private Context context;
     private ArrayList<BluetoothDeviceData> itemList = null ;
     private ArrayList<BluetoothDevice> deviceList = null ;
+
+    // 생성자에서 데이터 리스트 객체를 전달받음.
+    BluetoothDeviceViewAdapter(Context context) {
+        this.context = context;
+        clear();
+    }
 
     public void clear() {
         ArrayList<BluetoothDevice> deviceList = new ArrayList<>();
         this.deviceList = deviceList;
-
         // 리사이클러뷰에 표시할 데이터 리스트 생성.
         ArrayList<BluetoothDeviceData> itemList = new ArrayList<>();
         itemList.add(new BluetoothDeviceData("이름", "MAC", null));
@@ -41,12 +49,26 @@ public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDe
             tvName = itemView.findViewById(R.id.tvName);
             tvMAC = itemView.findViewById(R.id.tvMAC);
             tvUUID = itemView.findViewById(R.id.tvUUID);
-        }
-    }
 
-    // 생성자에서 데이터 리스트 객체를 전달받음.
-    BluetoothDeviceViewAdapter() {
-        clear();
+            itemView.setOnClickListener(listener->{
+                String uuid = getUuid();
+                tvUUID.setText(uuid);
+            });
+        }
+
+        private String getUuid() {
+            int pos = getAdapterPosition();
+            if (pos > 0) {
+                BluetoothDevice device = deviceList.get(pos);
+
+                Toast.makeText(context, "선택한 디바이스 이름: " +
+                        device.getName() + "\nMAC: " + device.getAddress(),
+                        Toast.LENGTH_SHORT).show();
+
+//                BluetoothGatt bluetoothGatt = device.connectGatt(context, false, gattCallback);
+            }
+            return "";
+        }
     }
 
 
@@ -67,9 +89,15 @@ public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDe
             }
         }
 
+        if (name == null || name.isEmpty()) {
+            name = "알 수 없음";
+        }
+
+        if (uuids == null) {
+            uuids = new String[]{"클릭하면 연결해서 UUID 출력"};
+        }
+
         BluetoothDeviceData data = new BluetoothDeviceData(name, mac, uuids);
-//        list.add(data);
-//        Log.d("deviceList", list+"");
         boolean duplicated = false;
 
         for (BluetoothDeviceData prevData : itemList) {
