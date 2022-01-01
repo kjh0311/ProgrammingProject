@@ -26,6 +26,8 @@ import com.kjh.blescanner.domain.BluetoothDeviceData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // 블루투스 권한 요청 거부 시 처리 방법
 
@@ -132,7 +134,8 @@ public class MainActivity extends AppCompatActivity {
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
 //        bluetoothAdapter.startLeScan(leScanCallback);
-        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+//        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+        startScan();
 
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(receiver, filter);
@@ -141,11 +144,35 @@ public class MainActivity extends AppCompatActivity {
         btnScan.setOnClickListener(listener -> {
 
             Log.d(TAG, "btnScan 클릭");
-
-            bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
-            bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+            deviceViewAdapter.clear();
+            deviceViewAdapter.notifyDataSetChanged();
+            startScan();
+//            bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
+//            bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
         });
     }
+
+
+    private void startScan() {
+//        bluetoothAdapter.startLeScan(leScanCallback);
+        bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
+        if (btnScan != null)
+            btnScan.setEnabled(false);
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(() -> {
+                    stopScan();
+                });
+            }
+        }, 3000);
+    }
+
+    private void stopScan() {
+        bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
+        btnScan.setEnabled(true);
+    }
+
 
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
