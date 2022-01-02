@@ -1,3 +1,5 @@
+// 작성자: 김진희
+
 package com.kjh.blescanner;
 
 import androidx.activity.result.ActivityResultLauncher;
