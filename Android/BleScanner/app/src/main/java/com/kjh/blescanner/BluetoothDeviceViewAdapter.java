@@ -2,21 +2,25 @@ package com.kjh.blescanner;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.Intent;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kjh.blescanner.domain.BluetoothDeviceData;
+import com.kjh.blescanner.service.BluetoothLeService;
 
 import java.util.ArrayList;
 
 public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDeviceViewAdapter.ViewHolder> {
 
+    private MainActivity mainActivity;
     private ArrayList<BluetoothDeviceData> itemList = null ;
     private ArrayList<BluetoothDevice> deviceList = null ;
 
@@ -41,11 +45,40 @@ public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDe
             tvName = itemView.findViewById(R.id.tvName);
             tvMAC = itemView.findViewById(R.id.tvMAC);
             tvUUID = itemView.findViewById(R.id.tvUUID);
+
+            itemView.setOnClickListener(listener->{
+                String uuid = getUuid();
+//                tvUUID.setText(uuid);
+            });
+        }
+
+        private String getUuid() {
+            int pos = getAdapterPosition();
+            if (pos > 0) {
+                BluetoothDevice device = deviceList.get(pos-1);
+
+                Toast.makeText(mainActivity, "선택한 디바이스 이름: " +
+                                device.getName() + "\nMAC: " + device.getAddress(),
+                        Toast.LENGTH_SHORT).show();
+
+                final Intent intent = new Intent(mainActivity, DeviceControlActivity.class);
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+
+                mainActivity.startActivity(intent);
+
+//                BluetoothLeService service = new BluetoothLeService();
+//                service.connect(device.getAddress());
+
+//                BluetoothGatt bluetoothGatt = device.connectGatt(context, false, gattCallback);
+            }
+            return "";
         }
     }
 
     // 생성자에서 데이터 리스트 객체를 전달받음.
-    BluetoothDeviceViewAdapter() {
+    BluetoothDeviceViewAdapter(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
         clear();
     }
 
@@ -65,6 +98,12 @@ public class BluetoothDeviceViewAdapter extends RecyclerView.Adapter<BluetoothDe
             for (int i=0; i<parcelUuids.length; i++) {
                 uuids[i] = parcelUuids[i].toString();
             }
+        } else {
+            uuids = new String[]{"클릭하면 연결하여 UUID 확인함"};
+        }
+
+        if (name == null || name.isEmpty()) {
+            name = "이름없음";
         }
 
         BluetoothDeviceData data = new BluetoothDeviceData(name, mac, uuids);

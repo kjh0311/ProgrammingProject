@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this)) ;
 
         // 리사이클러뷰에 SimpleTextAdapter 객체 지정.
-        deviceViewAdapter = new BluetoothDeviceViewAdapter() ;
+        deviceViewAdapter = new BluetoothDeviceViewAdapter(this) ;
         recyclerView.setAdapter(deviceViewAdapter);
 
         ActivityCompat.requestPermissions(this,

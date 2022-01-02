@@ -29,6 +29,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.kjh.blescanner.DeviceControlActivity"/>
+        <service android:name="com.kjh.blescanner.service.BluetoothLeService" android:enabled="true"/>
     </application>
 
 </manifest>
