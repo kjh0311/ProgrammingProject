@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+// 안드로이드 스튜디오 4.1.2 버전으로 하기 위해서 buildToolsVersion 을 낮춤
+android {
+    compileSdkVersion 31
+    buildToolsVersion "30.0.2"
+
+    defaultConfig {
+        applicationId "com.kjh.blescanner"
+        minSdkVersion 21
+        targetSdkVersion 31
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// ActivityResultLauncher, ActivityResultContracts, RecyclerView 사용하기 위해 gradle 수정
+dependencies {
+    //implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.4.0' // ActivityResultLauncher, ActivityResultContracts
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation "androidx.recyclerview:recyclerview:1.1.0"       // RecyclerView
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}
