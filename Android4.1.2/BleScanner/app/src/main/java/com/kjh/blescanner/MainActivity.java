@@ -10,13 +10,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -100,10 +96,6 @@ public class MainActivity extends AppCompatActivity {
         // 여기서 블루투스 어댑터를 다시 얻어와야 사용 가능
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // 디바이스 발견 시 동작을 정의할 브로드캐스트 리시버를 등록함
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(bleBroadcastReceiver, filter);
-
         // BLE 장치를 스캔하고, 스캔 중에는 버튼을 비활성화함 (스캔 시간은 3초)
         startBleScan(3);
 
@@ -119,33 +111,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    // Create a BroadcastReceiver for ACTION_FOUND.
-    private final BroadcastReceiver bleBroadcastReceiver = new BroadcastReceiver() {
-        
-        // 장치 발견 시 장치 추가
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-            Log.d("BroadcastReceiver", "onReceive");
-
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BluetoothDevice
-                // object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-
-//                Log.d("deviceName", deviceName);
-//                Log.d("deviceHardwareAddress", deviceHardwareAddress);
-                deviceViewAdapter.addDevice(device);
-                deviceViewAdapter.notifyDataSetChanged();
-            }
-        }
-    };
-
     // BLE 장치를 스캔하고, 스캔 중에는 버튼을 비활성화함
-    // scanCallback은 이 클래스의 최하단에 정의함
+    // scanCallback 은 이 클래스의 최하단에 정의함
     private void startBleScan(int second) {
 //        bluetoothAdapter.startLeScan(leScanCallback);
         bluetoothAdapter.getBluetoothLeScanner().startScan(scanCallback);
@@ -155,18 +122,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 runOnUiThread(() -> {
-                    stopScan();
+                    stopBleScan();
                 });
             }
         }, second * 1000);
     }
 
-    private void stopScan() {
+    // BLE 장치 스캔을 멈출 때는 스캔 버튼을 다시 활성화함
+    private void stopBleScan() {
         bluetoothAdapter.getBluetoothLeScanner().stopScan(scanCallback);
         btnScan.setEnabled(true);
     }
 
 
+    // BLE 장치를 발견했을 때, 혹은 장치 스캔을 실패했을 때 동작 정의
     private ScanCallback scanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
@@ -185,6 +154,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d("onScanFailed", errorCode+"");
         }
 
+        // 장치를 발견하였으면 화면에 보여줄 장치 목록에 추가하고 정보를 저장함
         private void processResult(final ScanResult result) {
             runOnUiThread(new Runnable() {
                 @Override
